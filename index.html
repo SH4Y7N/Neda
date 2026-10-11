@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0a1f">
+<title>Neda</title>
+<meta property="og:title" content="ندا ">
+<meta property="og:description" content="یه چیزی هست که می‌خوام بهت بگم…">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@200..800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#fff6f0;
+  --rose:#ff8fae;
+  --peach:#ffb48a;
+  --night:#0b0a1f;
+  --sans:'Vazirmatn','Segoe UI',Tahoma,'Noto Sans Arabic',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none !important}
+html,body{height:100%}
+body{
+  background:var(--night);color:var(--ink);font-family:var(--sans);
+  overflow:hidden;overscroll-behavior:none;
+  -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;
+}
+.no-gl body{background:radial-gradient(90% 60% at 50% 105%,#7a2c58,transparent 70%),linear-gradient(#0b0a1f,#2b1247)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* لایه‌های پس‌زمینه: آسمان (WebGL) و ذره‌ها (Canvas) */
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+#sky{z-index:0}
+#dust{z-index:1}
+
+/* صحنه‌ها */
+.scene{
+  position:fixed;inset:0;z-index:3;display:grid;place-items:center;text-align:center;
+  padding:max(76px,calc(env(safe-area-inset-top) + 60px)) 26px max(64px,calc(env(safe-area-inset-bottom) + 48px));
+}
+
+/* ظاهر شدن کلمه‌به‌کلمه: محو + تیز شدن + بالا اومدن */
+.rv .wd{
+  display:inline-block;opacity:0;filter:blur(14px);transform:translateY(.5em);
+  transition:opacity .5s ease,filter .5s ease,transform .5s ease;
+}
+.in .rv .wd{
+  opacity:1;filter:blur(0);transform:none;
+  transition:
+    opacity 1.1s ease calc(var(--i) * 75ms + var(--b,150ms)),
+    filter 1.1s ease calc(var(--i) * 75ms + var(--b,150ms)),
+    transform 1.2s cubic-bezier(.2,.7,.2,1) calc(var(--i) * 75ms + var(--b,150ms));
+}
+.fade{opacity:0;transform:translateY(14px);transition:opacity .45s ease,transform .45s ease}
+.in .fade{
+  opacity:1;transform:none;
+  transition:opacity 1s ease var(--d,600ms),transform 1s cubic-bezier(.2,.7,.2,1) var(--d,600ms);
+}
+.skip .rv .wd,.skip .fade{transition-duration:.01s !important;transition-delay:0s !important}
+
+/* تایپوگرافی */
+.lead{
+  font-size:clamp(1.4rem,4.8vw,2.3rem);font-weight:300;line-height:1.7;
+  text-shadow:0 2px 30px rgba(10,4,24,.7);
+}
+.big{
+  font-weight:300;font-size:clamp(1.95rem,6.3vw,4.2rem);line-height:1.7;
+  max-width:16em;text-wrap:balance;text-shadow:0 4px 44px rgba(12,4,28,.8);
+}
+.big.em{font-weight:700;font-size:clamp(2.3rem,8vw,5.2rem);line-height:1.5}
+.title{
+  font-weight:700;font-size:clamp(2rem,7vw,4rem);line-height:1.5;
+  max-width:14em;text-wrap:balance;text-shadow:0 4px 44px rgba(12,4,28,.8);
+}
+.sub{
+  margin-top:1rem;max-width:26em;font-weight:400;
+  font-size:clamp(1.05rem,3.3vw,1.35rem);line-height:2;
+  color:rgba(255,246,240,.84);text-shadow:0 2px 24px rgba(12,4,28,.7);
+}
+.sign{margin-top:2.2rem;font-weight:600;font-size:1.25rem;color:#ffd3bc;text-shadow:0 2px 24px rgba(12,4,28,.7)}
+
+/* چیدمان صحنه‌ها */
+.intro-copy{
+  position:absolute;left:0;right:0;padding:0 24px;top:56%;
+  display:grid;justify-items:center;
+}
+.ask-copy,.end-copy{display:grid;justify-items:center}
+.ask-copy{margin-top:clamp(70px,17vh,190px)}
+.choices{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin-top:2.2rem}
+
+/* دکمه‌ها: شیشه‌ای + اثر موج + جذب شدن به موس */
+.btn{
+  position:relative;overflow:hidden;display:inline-block;cursor:pointer;text-decoration:none;
+  font:600 1.05rem/1 var(--sans);white-space:nowrap;
+  padding:1.1rem 1.9rem;border-radius:999px;
+  color:#fff;background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.24);
+  -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);
+  touch-action:manipulation;
+  transition:transform .25s cubic-bezier(.2,.8,.3,1),background .3s ease,border-color .3s ease,box-shadow .3s ease,opacity .3s ease;
+}
+.btn:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.45)}
+.btn.primary{
+  color:#2a0f2b;border-color:transparent;
+  background:linear-gradient(135deg,#ff8fae,#ffb48a);
+  box-shadow:0 14px 44px -12px rgba(255,120,160,.75),inset 0 1px 0 rgba(255,255,255,.55);
+}
+.btn.primary:hover{background:linear-gradient(135deg,#ff9db7,#ffc09a)}
+.btn:focus-visible{outline:3px solid #ffd3bc;outline-offset:3px}
+.ripple{
+  position:absolute;border-radius:50%;pointer-events:none;background:rgba(255,255,255,.5);
+  transform:scale(0);animation:ripple .7s ease-out forwards;
+}
+@keyframes ripple{to{transform:scale(1);opacity:0}}
+
+/* دکمه‌ی فراری */
+.dodge{
+  transition:left .38s cubic-bezier(.2,.8,.3,1),top .38s cubic-bezier(.2,.8,.3,1),
+             opacity .3s ease,background .3s ease,border-color .3s ease;
+}
+.dodge.fly{position:fixed;z-index:20;margin:0}
+
+/* نوار پیشرفت بالای صفحه */
+.bars{
+  position:fixed;z-index:5;top:max(16px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);
+  width:min(560px,calc(100% - 44px));display:flex;gap:6px;opacity:0;transition:opacity .6s ease;pointer-events:none;
+}
+.bars.on{opacity:1}
+.bars i{flex:1;height:3px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.bars i::after{
+  content:"";display:block;height:100%;background:#fff;border-radius:3px;
+  transform:scaleX(0);transform-origin:right center;transition:transform .7s cubic-bezier(.3,.7,.2,1);
+}
+.bars i.done::after{transform:scaleX(1)}
+
+/* راهنمای لمس و دکمه‌ی قبلی */
+.hint{
+  position:absolute;left:0;right:0;bottom:max(28px,calc(env(safe-area-inset-bottom) + 14px));
+  text-align:center;font-size:.95rem;font-weight:300;color:rgba(255,246,240,.7);
+}
+.tap{
+  display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--rose);
+  margin-inline-end:.7rem;vertical-align:middle;animation:ping 1.9s ease-out infinite;
+}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,143,174,.7)}80%,100%{box-shadow:0 0 0 16px rgba(255,143,174,0)}}
+.back{
+  position:absolute;inset-inline-start:20px;bottom:max(20px,calc(env(safe-area-inset-bottom) + 8px));
+  font:400 .9rem var(--sans);color:rgba(255,246,240,.6);background:none;border:0;cursor:pointer;padding:.6rem .8rem;
+}
+.back:hover{color:#fff}
+.back:focus-visible{outline:2px solid #ffd3bc;border-radius:8px}
+
+/* ذره‌های بعد از جواب */
+@media (prefers-reduced-motion:reduce){
+  .rv .wd,.fade{transition:none !important;opacity:1;filter:none;transform:none}
+  .tap,.ripple{animation:none}
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="sky" aria-hidden="true"></canvas>
+<canvas id="dust" aria-hidden="true"></canvas>
+<nav class="bars" id="bars" aria-hidden="true"></nav>
+
+<!-- ۱) شروع: اسم ندا از ذره‌ها ساخته می‌شه -->
+<section id="intro" class="scene" hidden>
+  <h1 class="sr">می‌تونم یه چیزی بهت بگم؟</h1>
+  <div class="intro-copy">
+    <p class="lead rv" data-split style="--b:2000ms">می‌تونم یه چیزی بهت بگم؟</p>
+    <div class="choices fade" style="--d:3000ms">
+      <button class="btn primary mag" data-act="start">اره</button>
+      <button class="btn mag" data-act="start">گوش می‌دم 👀</button>
+    </div>
+  </div>
+</section>
+
+<!-- ۲) نامه: هر بار یک جمله، با لمس ادامه پیدا می‌کنه -->
+<section id="letter" class="scene" hidden>
+  <p id="slideText" class="rv big" aria-live="polite"></p>
+  <div class="hint fade" id="hint"><span class="tap"></span><span id="hintLabel">برای ادامه، لمس کن</span></div>
+  <button class="back fade" id="back" style="--d:900ms" hidden>قبلی</button>
+</section>
+
+<!-- ۳) سؤال -->
+<section id="ask" class="scene" hidden>
+  <div class="ask-copy">
+    <h2 class="title rv" data-split>دوست داری بیشتر با هم آشنا بشیم؟</h2>
+    <p class="sub fade" style="--d:1300ms"></p>
+    <div class="choices fade" style="--d:1900ms">
+      <button class="btn primary mag" id="yesBtn">آره </button>
+      <button class="btn dodge" id="laterBtn">شاید بعداً…</button>
+    </div>
+  </div>
+</section>
+
+<!-- ۴) جواب آره -->
+<section id="yes" class="scene" hidden>
+  <div class="end-copy">
+    <h2 class="title rv" data-split>ممنون که جواب دادی</h2>
+    <p class="sub fade" style="--d:1200ms">فک کنم این میتونه شروع آشناییمون بشه
+خوشحالم که بهم فرصت دادی بیشتر بشناسمت 🤍</p>
+    <div class="choices fade" style="--d:1800ms">
+      <a class="btn primary" id="tg" target="_blank" rel="noopener">پیام در تلگرام ✈️</a>
+    </div>
+    <p class="sign fade" style="--d:2400ms"></p>
+  </div>
+</section>
+
+<!-- ۵) جواب «کمی وقت» -->
+<section id="laterScene" class="scene" hidden>
+  <div class="end-copy">
+    <h2 class="title rv" data-split>مشکلی نیست</h2>
+    <p class="sub fade" style="--d:1000ms">هیچ عجله‌ای نیست. هر چیزی وقت خودش رو داره، و من همین‌جام.</p>
+    <p class="sign fade" style="--d:1700ms">روزت مبارک، ندا </p>
+  </div>
+</section>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ═════════ تنظیمات: اینجا رو می‌تونی عوض کنی ═════════ */
+  const CONFIG = {
+    telegram: 'shayan_mohit',
+    email: 'sh4Y7nmt@gmail.com',
+    prefill: 'سایتت رو دیدم',
+    dodgeLimit: 5                       // دکمه‌ی «شاید بعداً» چند بار فرار کنه
+  };
+
+  /* متن نامه: t = متن، m = حال‌وهوای آسمان (۰ شب تا ۱ سپیده‌دم)، em = درشت‌تر */
+  const SLIDES = [
+    { t: 'یه چیزی هست که خیلی وقته می‌خواستم بهت بگم..', m: 0.04 },
+    { t: 'گفتم به‌جای اینکه هی تو ذهنم مرورش کنم، بالاخره بهت بگم.', m: 0.12 },
+    { t: ' ازت خوشم میاد و دوست دارم بیشتر باهات حرف بزنم و بشناسمت.👀', m: 0.43 },
+    { t: 'روز دختر مبارک. می‌خواستم بدونی که برای من یه آدم معمولی نیستی.❤️ ', m: 0.68, em: true },
+    { t: 'یه سؤال ازت دارم', m: 0.78, em: true }
+  ];
+
+  const DODGE_LABELS = ['شاید بعداً…', 'نا عا', 'مطمعنی' , 'نا عا'];
+  const CALM_LABEL = 'Bruh';
+
+  /* ═════════ ابزارها ═════════ */
+  const $  = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const TAU = Math.PI * 2;
+
+  const S = {
+    mood: 0, moodTarget: 0,
+    pulse: 1, pulseC: [0, 0],
+    mouse: [0, 0], mouseT: [0, 0],
+    ptr: { x: -9999, y: -9999, on: false }
+  };
+  let TIME = 0;
+
+  /* شکستن متن به کلمه (حروف یک کلمه از هم جدا نمی‌شن تا اتصال فارسی حفظ بشه) */
+  function splitWords(node) {
+    const text = node.textContent.trim();
+    node.textContent = '';
+    const parts = text.split(/\s+/);
+    parts.forEach((w, i) => {
+      const s = document.createElement('span');
+      s.className = 'wd';
+      s.style.setProperty('--i', i);
+      s.textContent = w;
+      node.appendChild(s);
+      if (i < parts.length - 1) node.appendChild(document.createTextNode(' '));
+    });
+    return parts.length;
+  }
+  $$('[data-split]').forEach(splitWords);
+
+  const el = {
+    intro: $('#intro'), letter: $('#letter'), ask: $('#ask'),
+    yes: $('#yes'), later: $('#laterScene')
+  };
+  const bars = $('#bars');
+  const open = sc => {
+    sc.hidden = false;
+    sc.classList.remove('skip');
+    requestAnimationFrame(() => requestAnimationFrame(() => sc.classList.add('in')));
+  };
+  const close = sc => sc.classList.remove('in');
+
+  const fontsReady = Promise.race([
+    (document.fonts && document.fonts.load) ? document.fonts.load('800 120px Vazirmatn', 'ندا') : Promise.resolve(),
+    wait(2200)
+  ]).catch(() => {});
+
+  /* ═════════ آسمان: شیدر WebGL ═════════ */
+  const sky = $('#sky');
+  let gl = null, U = {}, scaleQ = 1;
+
+  const VS = 'attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.0,1.0);}';
+  const FS = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uMood;
+uniform float uPulse;
+uniform vec2 uMouse;
+uniform vec2 uPulseC;
+
+float hash21(vec2 p){
+  p = fract(p * vec2(233.34, 851.73));
+  p += dot(p, p + 23.45);
+  return fract(p.x * p.y);
+}
+float vnoise(vec2 p){
+  vec2 i = floor(p);
+  vec2 f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i);
+  float b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0));
+  float d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+}
+float fbm(vec2 p){
+  float v = 0.0;
+  float a = 0.5;
+  for (int i = 0; i < 4; i++){
+    v += a * vnoise(p);
+    p = mat2(1.6, 1.2, -1.2, 1.6) * p + vec2(3.1, 1.7);
+    a *= 0.5;
+  }
+  return v;
+}
+float stars(vec2 uv, float scale, float seed, float tw){
+  vec2 g = uv * scale;
+  vec2 id = floor(g);
+  vec2 f = fract(g) - 0.5;
+  float h = hash21(id + seed);
+  vec2 o = (vec2(hash21(id + seed + 7.1), hash21(id + seed + 3.3)) - 0.5) * 0.7;
+  float d = length(f - o);
+  float s = smoothstep(0.07, 0.0, d) * step(0.86, h);
+  float k = 0.55 + 0.45 * sin(tw * (1.0 + h * 3.0) + h * 40.0);
+  return s * k;
+}
+void main(){
+  float sh = min(uRes.x, uRes.y);
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / sh;
+  float m = uMood;
+  float t = uTime * 0.05;
+
+  vec2 p = uv * 1.5;
+  vec2 q = vec2(fbm(p + vec2(0.0, t)), fbm(p + vec2(5.2, 1.3) - t));
+  vec2 r = vec2(fbm(p + 3.0 * q + vec2(1.7, 9.2) + t * 0.8),
+                fbm(p + 3.0 * q + vec2(8.3, 2.8) - t * 0.6));
+  float f = fbm(p + 3.0 * r);
+
+  vec3 A = mix(vec3(0.030, 0.027, 0.100), vec3(0.160, 0.055, 0.220), m);
+  vec3 B = mix(vec3(0.200, 0.090, 0.330), vec3(0.600, 0.190, 0.370), m);
+  vec3 C = mix(vec3(0.700, 0.210, 0.480), vec3(1.000, 0.700, 0.490), m);
+
+  vec3 col = mix(A, B, smoothstep(0.18, 0.78, f));
+  col = mix(col, C, smoothstep(0.5, 1.1, f * f * 1.6 + length(q) * 0.28) * (0.45 + 0.25 * m));
+
+  /* افق که با پیشرفت نامه بالا میاد */
+  float hy = (uv.y + 0.62 - m * 0.2) * 1.5;
+  float hz = exp(-hy * hy);
+  col += mix(vec3(0.10, 0.05, 0.22), vec3(1.0, 0.55, 0.42), m) * hz * (0.25 + 0.75 * m);
+
+  /* خورشید */
+  vec2 sp = uv - vec2(0.0, -0.58 + m * 0.2);
+  float sun = exp(-dot(sp, sp) * 14.0) * smoothstep(0.5, 1.0, m);
+  col += vec3(1.0, 0.82, 0.62) * sun * 0.9;
+
+  /* ستاره‌ها (با نزدیک شدن به صبح محو می‌شن) */
+  float sf = 1.0 - smoothstep(0.15, 0.75, m);
+  float st = stars(uv, 14.0, 1.0, uTime * 1.3) + 0.7 * stars(uv + 0.37, 26.0, 9.0, uTime * 1.8);
+  col += vec3(0.85, 0.88, 1.0) * st * sf;
+
+  /* نور دنبال‌کننده‌ی موس/انگشت */
+  float dm = length(uv - uMouse);
+  col += mix(vec3(0.55, 0.22, 0.65), vec3(1.0, 0.65, 0.55), m) * exp(-dm * dm * 8.0) * 0.20;
+
+  /* موج نور بعد از جواب «آره» */
+  float rr = length(uv - uPulseC);
+  float rd = (rr - uPulse * 1.9) * 5.0;
+  float ring = exp(-rd * rd) * (1.0 - uPulse);
+  col += vec3(1.0, 0.80, 0.70) * ring * 0.9;
+
+  col *= 1.0 - 0.45 * dot(uv * 0.75, uv * 0.75);
+  col += (hash21(gl_FragCoord.xy + fract(uTime) * 91.7) - 0.5) * 0.03;
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
+}`;
+
+  function initGL() {
+    try {
+      gl = sky.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'low-power' })
+        || sky.getContext('experimental-webgl');
+      if (!gl) throw new Error('no webgl');
+      const mk = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+        return s;
+      };
+      const prog = gl.createProgram();
+      gl.attachShader(prog, mk(gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('link failed');
+      gl.useProgram(prog);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+      const loc = gl.getAttribLocation(prog, 'aPos');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      ['uRes', 'uTime', 'uMood', 'uPulse', 'uMouse', 'uPulseC'].forEach(n => { U[n] = gl.getUniformLocation(prog, n); });
+    } catch (err) {
+      console.warn('WebGL unavailable, using CSS fallback:', err);
+      gl = null;
+      document.documentElement.classList.add('no-gl');
+    }
+  }
+
+  function resizeSky() {
+    if (!gl) return;
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const w = innerWidth * dpr, h = innerHeight * dpr;
+    const k = Math.min(1, Math.sqrt((620000 * scaleQ) / (w * h)));
+    sky.width = Math.max(2, Math.round(w * k));
+    sky.height = Math.max(2, Math.round(h * k));
+    gl.viewport(0, 0, sky.width, sky.height);
+  }
+
+  /* ═════════ ذره‌ها: اسم، قلب، گرده و کانفتی ═════════ */
+  const dust = $('#dust');
+  const dctx = dust.getContext('2d');
+  let DW = innerWidth, DH = innerHeight;
+
+  function resizeDust() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    DW = innerWidth; DH = innerHeight;
+    dust.width = Math.round(DW * dpr);
+    dust.height = Math.round(DH * dpr);
+    dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  const BUCKETS = 6;
+  const COLORS = [
+    'rgba(255,143,174,.95)', 'rgba(255,160,160,.95)', 'rgba(255,180,138,.95)',
+    'rgba(255,214,190,.95)', 'rgba(255,236,214,.9)', 'rgba(214,150,255,.85)'
+  ];
+  let P = [];
+  let buckets = [];
+  let mode = 'free';          // 'target' = ذره‌ها شکل می‌گیرن ، 'free' = آزاد و شناور
+  let layoutKind = null;      // 'name' | 'heart'
+  let visibleLimit = 0;
+  let assembleStart = 0;
+  const conf = [];
+
+  function makeParticles(n) {
+    P = [];
+    for (let i = 0; i < n; i++) {
+      P.push({ x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0, s: 1.4, a: 0, c: 0, ph: Math.random() * TAU });
+    }
+  }
+
+  function setTargets(pts) {
+    const arr = pts.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    let minx = 1e9, maxx = -1e9;
+    arr.forEach(p => { if (p[0] < minx) minx = p[0]; if (p[0] > maxx) maxx = p[0]; });
+    buckets = Array.from({ length: BUCKETS }, () => []);
+    P.forEach((p, i) => {
+      const t = arr[i % arr.length];
+      p.tx = t[0]; p.ty = t[1];
+      const g = (p.tx - minx) / Math.max(1, maxx - minx);
+      p.c = clamp(Math.floor((g * 0.75 + Math.random() * 0.25) * BUCKETS), 0, BUCKETS - 1);
+      buckets[p.c].push(i);
+    });
+  }
+
+  /* نقطه‌های اسم «ندا»: متن روی یه بوم مخفی کشیده می‌شه و پیکسل‌هاش نمونه‌برداری می‌شن */
+  function namePoints() {
+    const maxW = Math.min(DW * 0.8, 560);
+    const cx = DW / 2, cy = DH * (DW < 640 ? 0.33 : 0.36);
+    const off = document.createElement('canvas');
+    const o = off.getContext('2d');
+    const fs = 300;
+    const font = `800 ${fs}px Vazirmatn, Tahoma, 'Noto Sans Arabic', sans-serif`;
+    o.font = font;
+    const tw = Math.max(10, o.measureText('ندا').width);
+    off.width = Math.ceil(tw + 80);
+    off.height = Math.ceil(fs * 1.6);
+    o.font = font;
+    o.textAlign = 'center';
+    o.textBaseline = 'middle';
+    o.fillStyle = '#fff';
+    o.fillText('ندا', off.width / 2, off.height * 0.55);
+    const d = o.getImageData(0, 0, off.width, off.height).data;
+    const gap = 2, raw = [];
+    let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    for (let y = 0; y < off.height; y += gap) {
+      for (let x = 0; x < off.width; x += gap) {
+        if (d[(y * off.width + x) * 4 + 3] > 110) {
+          raw.push([x, y]);
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+    if (raw.length < 50) return { pts: [], spacing: 4 };
+    const scale = maxW / Math.max(1, maxX - minX);
+    const mx = (minX + maxX) / 2, my = (minY + maxY) / 2;
+    let pts = raw.map(([x, y]) => [cx + (x - mx) * scale, cy + (y - my) * scale]);
+    if (pts.length > 3200) {
+      const step = pts.length / 3200;
+      pts = Array.from({ length: 3200 }, (_, i) => pts[Math.floor(i * step)]);
+    }
+    return { pts, spacing: gap * scale };
+  }
+
+  /* نقطه‌های داخل یه قلب (معادله‌ی ضمنی قلب) */
+  function heartPoints(n, cx, cy, width) {
+    const unit = width / 2.4, pts = [];
+    let guard = 0;
+    while (pts.length < n && guard++ < n * 60) {
+      const x = rand(-1.25, 1.25), y = rand(-1.2, 1.3);
+      const v = Math.pow(x * x + y * y - 1, 3) - x * x * y * y * y;
+      if (v <= 0) pts.push([cx + x * unit, cy - (y - 0.1) * unit]);
+    }
+    return pts;
+  }
+  function heartLayout() {
+    return { cx: DW / 2, cy: Math.max(92, DH * 0.18), width: Math.min(DW * 0.34, DH * 0.2, 170) };
+  }
+
+  function sizeParticles(spacing) {
+    const s = clamp(spacing * 0.36, 0.9, 2.2);
+    P.forEach(p => { p.s = s; });
+  }
+
+  function applyName(initial) {
+    let { pts, spacing } = namePoints();
+    if (pts.length < 50) {                       // اگه فونت/بوم مشکل داشت، یه قلب نشون بده
+      pts = heartPoints(1800, DW / 2, DH * 0.34, Math.min(DW * 0.5, 260));
+      spacing = 4;
+    }
+    if (initial) {
+      makeParticles(Math.max(pts.length, 1800));
+      P.forEach(p => { p.x = rand(0, DW); p.y = rand(0, DH); p.a = 0; });
+    }
+    setTargets(pts);
+    sizeParticles(spacing);
+    mode = 'target';
+    layoutKind = 'name';
+    visibleLimit = P.length;
+    if (initial) assembleStart = TIME;
+  }
+
+  function applyHeart(fresh) {
+    const h = heartLayout();
+    setTargets(heartPoints(1600, h.cx, h.cy, h.width));
+    sizeParticles(4.2);
+    mode = 'target';
+    layoutKind = 'heart';
+    visibleLimit = 1100;
+    if (fresh) assembleStart = TIME;
+  }
+
+  function explode(cx, cy, power) {
+    P.forEach(p => {
+      const a = Math.atan2(p.y - cy, p.x - cx) + rand(-0.5, 0.5);
+      const sp = rand(2, 10) * power;
+      p.vx = Math.cos(a) * sp;
+      p.vy = Math.sin(a) * sp - rand(0, 2);
+    });
+    mode = 'free';
+    layoutKind = null;
+  }
+
+  function confetti(cx, cy, n) {
+    const cols = ['#ff8fae', '#ffb48a', '#ffd9a0', '#fff1e6', '#ff6f9c', '#d9a3ff'];
+    for (let i = 0; i < n; i++) {
+      const a = rand(0, TAU), sp = rand(4, 13);
+      conf.push({
+        x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(2, 7),
+        r: rand(3, 7), rot: rand(0, TAU), vr: rand(-0.25, 0.25),
+        c: cols[(Math.random() * cols.length) | 0], life: 1, decay: rand(0.004, 0.009), shape: Math.random() < 0.5 ? 0 : 1
+      });
+    }
+  }
+
+  function updateDust(dt) {
+    const f = Math.min(dt * 60, 2.5);
+    const R = Math.max(70, Math.min(DW, DH) * 0.14), R2 = R * R;
+    const swirl = mode === 'target' ? Math.max(0, 1 - (TIME - assembleStart) / 2.4) : 0;
+    const damp = Math.pow(mode === 'target' ? 0.925 : 0.985, f);
+    for (let i = 0; i < P.length; i++) {
+      const p = P[i];
+      const want = i < visibleLimit ? 1 : 0;
+      p.a += (want - p.a) * Math.min(1, 0.05 * f);
+      if (reduce) {                              // بدون انیمیشن: ذره‌ها همون‌جا که باید باشن
+        if (mode === 'target') { p.x = p.tx; p.y = p.ty; p.a = want; } else { p.a = 0; }
+        continue;
+      }
+      if (p.a < 0.01 && want === 0) continue;
+      if (mode === 'target') {
+        const dx = p.tx - p.x, dy = p.ty - p.y;
+        p.vx += dx * 0.007 * f;
+        p.vy += dy * 0.007 * f;
+        if (swirl > 0) { p.vx += -dy * 0.0016 * swirl * f; p.vy += dx * 0.0016 * swirl * f; }
+        p.vx += Math.sin(TIME * 1.3 + p.ph) * 0.01 * f;
+        p.vy += Math.cos(TIME * 1.1 + p.ph * 1.7) * 0.01 * f;
+      } else {
+        p.vx += Math.sin(TIME * 0.5 + p.ph * 3) * 0.004 * f;
+        p.vy -= 0.0035 * f;
+      }
+      if (S.ptr.on) {
+        const ox = p.x - S.ptr.x, oy = p.y - S.ptr.y, d2 = ox * ox + oy * oy;
+        if (d2 < R2) {
+          const d = Math.sqrt(d2) || 1, k = (1 - d / R) * (mode === 'target' ? 2.2 : 0.6) * f;
+          p.vx += ox / d * k; p.vy += oy / d * k;
+        }
+      }
+      p.vx *= damp; p.vy *= damp;
+      p.x += p.vx * f; p.y += p.vy * f;
+      if (mode === 'free') {
+        if (p.y < -10) { p.y = DH + 10; p.x = Math.random() * DW; }
+        if (p.x < -10) p.x = DW + 10;
+        if (p.x > DW + 10) p.x = -10;
+      }
+    }
+  }
+
+  function drawDust(dt) {
+    const f = Math.min(dt * 60, 2.5);
+    dctx.clearRect(0, 0, DW, DH);
+    dctx.globalCompositeOperation = 'lighter';
+    for (let b = 0; b < buckets.length; b++) {
+      const list = buckets[b];
+      if (!list.length) continue;
+      dctx.fillStyle = COLORS[b];
+      dctx.beginPath();
+      for (let k = 0; k < list.length; k++) {
+        const p = P[list[k]];
+        const r = p.s * p.a;
+        if (r < 0.15) continue;
+        dctx.moveTo(p.x + r, p.y);
+        dctx.arc(p.x, p.y, r, 0, TAU);
+      }
+      dctx.fill();
+    }
+    if (!conf.length) return;
+    dctx.globalCompositeOperation = 'source-over';
+    for (let i = conf.length - 1; i >= 0; i--) {
+      const c = conf[i];
+      c.vy += 0.18 * f; c.vx *= 0.985; c.vy *= 0.985;
+      c.x += c.vx * f; c.y += c.vy * f; c.rot += c.vr * f; c.life -= c.decay * f;
+      if (c.life <= 0 || c.y > DH + 30) { conf.splice(i, 1); continue; }
+      dctx.save();
+      dctx.globalAlpha = Math.min(1, c.life * 1.4);
+      dctx.translate(c.x, c.y);
+      dctx.rotate(c.rot);
+      dctx.fillStyle = c.c;
+      if (c.shape === 0) { dctx.beginPath(); dctx.ellipse(0, 0, c.r, c.r * 0.5, 0, 0, TAU); dctx.fill(); }
+      else dctx.fillRect(-c.r * 0.5, -c.r * 0.5, c.r, c.r * 1.4);
+      dctx.restore();
+    }
+  }
+
+  /* ═════════ حلقه‌ی اصلی ═════════ */
+  let last = performance.now(), t0 = last, qFrames = 0, qAccum = 0, qDone = false;
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    TIME = (now - t0) / 1000;
+
+    S.mood += (S.moodTarget - S.mood) * (1 - Math.exp(-dt * 1.1));
+    const km = 1 - Math.exp(-dt * 5);
+    S.mouse[0] += (S.mouseT[0] - S.mouse[0]) * km;
+    S.mouse[1] += (S.mouseT[1] - S.mouse[1]) * km;
+    if (S.pulse < 1) S.pulse = Math.min(1, S.pulse + dt / 2.4);
+
+    if (gl) {
+      gl.uniform2f(U.uRes, sky.width, sky.height);
+      gl.uniform1f(U.uTime, reduce ? 6 : TIME);
+      gl.uniform1f(U.uMood, S.mood);
+      gl.uniform1f(U.uPulse, S.pulse);
+      gl.uniform2f(U.uMouse, S.mouse[0], S.mouse[1]);
+      gl.uniform2f(U.uPulseC, S.pulseC[0], S.pulseC[1]);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+    updateDust(dt);
+    drawDust(dt);
+
+    /* اگه گوشی کند بود، کیفیت آسمان خودکار کم می‌شه */
+    if (gl && !qDone && TIME > 1.5) {
+      qFrames++; qAccum += dt;
+      if (qFrames >= 60) {
+        if (qAccum / qFrames > 0.034 && scaleQ > 0.4) { scaleQ *= 0.78; resizeSky(); }
+        else qDone = true;
+        qFrames = 0; qAccum = 0;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  const toUv = (x, y) => {
+    const sh = Math.min(DW, DH);
+    return [(x - DW / 2) / sh, (DH / 2 - y) / sh];
+  };
+
+  /* ═════════ ورودی: موس و لمس ═════════ */
+  function track(e) {
+    S.ptr.x = e.clientX; S.ptr.y = e.clientY; S.ptr.on = true;
+    S.mouseT = toUv(e.clientX, e.clientY);
+  }
+  addEventListener('pointermove', track, { passive: true });
+  addEventListener('pointerdown', track, { passive: true });
+  addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') setTimeout(() => { S.ptr.on = false; }, 150); }, { passive: true });
+  document.documentElement.addEventListener('mouseleave', () => { S.ptr.on = false; });
+
+  /* دکمه‌ها: موج + کشیده شدن به سمت موس */
+  $$('.btn').forEach(b => {
+    b.addEventListener('pointerdown', e => {
+      const r = b.getBoundingClientRect();
+      const size = Math.max(r.width, r.height) * 2;
+      const s = document.createElement('span');
+      s.className = 'ripple';
+      s.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - r.left - size / 2}px;top:${e.clientY - r.top - size / 2}px`;
+      b.appendChild(s);
+      setTimeout(() => s.remove(), 750);
+    });
+  });
+  $$('.mag').forEach(b => {
+    b.addEventListener('pointermove', e => {
+      if (e.pointerType !== 'mouse') return;
+      const r = b.getBoundingClientRect();
+      const x = (e.clientX - (r.left + r.width / 2)) / r.width;
+      const y = (e.clientY - (r.top + r.height / 2)) / r.height;
+      b.style.transform = `translate(${x * 14}px, ${y * 10}px)`;
+    });
+    b.addEventListener('pointerleave', () => { b.style.transform = ''; });
+  });
+
+  /* ═════════ جریان داستان ═════════ */
+  const slideText = $('#slideText');
+  const hint = $('#hint');
+  const hintLabel = $('#hintLabel');
+  const backBtn = $('#back');
+  let slide = 0, busy = false, revealUntil = 0, answered = false;
+
+  SLIDES.forEach(() => bars.appendChild(document.createElement('i')));
+  const paintBars = n => Array.from(bars.children).forEach((b, i) => b.classList.toggle('done', i < n));
+
+  function renderSlide(i) {
+    const s = SLIDES[i];
+    slideText.className = 'rv big' + (s.em ? ' em' : '');
+    slideText.textContent = s.t;
+    const n = splitWords(slideText);
+    hint.style.setProperty('--d', (n * 75 + 1000) + 'ms');
+    hintLabel.textContent = i === SLIDES.length - 1 ? 'یه سؤال دارم ♡' : 'برای ادامه، لمس کن';
+    backBtn.hidden = i === 0;
+    S.moodTarget = s.m;
+    paintBars(i + 1);
+    revealUntil = performance.now() + n * 75 + 1400;
+  }
+
+  async function showSlide(i, first) {
+    el.letter.classList.remove('in', 'skip');
+    if (!first) await wait(reduce ? 0 : 480);
+    slide = i;
+    renderSlide(i);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.letter.classList.add('in')));
+  }
+
+  async function toLetter() {
+    if (busy) return;
+    busy = true;
+    close(el.intro);
+    if (!reduce) { explode(DW / 2, DH * 0.34, 0.9); visibleLimit = 260; }
+    else visibleLimit = 0;
+    S.moodTarget = SLIDES[0].m;
+    await wait(reduce ? 0 : 750);
+    el.intro.hidden = true;
+    el.letter.hidden = false;
+    bars.classList.add('on');
+    await showSlide(0, true);
+    busy = false;
+  }
+
+  async function next() {
+    if (busy) return;
+    if (performance.now() < revealUntil && !el.letter.classList.contains('skip')) {
+      el.letter.classList.add('skip');           // اولین لمس: بقیه‌ی متن یکجا نشون داده می‌شه
+      revealUntil = 0;
+      return;
+    }
+    busy = true;
+    if (slide < SLIDES.length - 1) await showSlide(slide + 1);
+    else await toAsk();
+    busy = false;
+  }
+
+  async function prev() {
+    if (busy || slide === 0) return;
+    busy = true;
+    await showSlide(slide - 1);
+    busy = false;
+  }
+
+  async function toAsk() {
+    close(el.letter);
+    await wait(reduce ? 0 : 520);
+    el.letter.hidden = true;
+    paintBars(SLIDES.length);
+    S.moodTarget = 0.84;
+    applyHeart(true);                            // گردِ نامه کم‌کم یه قلب می‌شه
+    open(el.ask);
+  }
+
+  el.letter.addEventListener('click', e => {
+    if (e.target.closest('button')) return;
+    next();
+  });
+  backBtn.addEventListener('click', prev);
+  addEventListener('keydown', e => {
+    if (el.letter.hidden) return;
+    const onBtn = e.target.closest && e.target.closest('button');
+    if (['ArrowLeft', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) {
+      if (onBtn && (e.key === ' ' || e.key === 'Enter')) return;
+      e.preventDefault(); next();
+    } else if (['ArrowRight', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) {
+      e.preventDefault(); prev();
+    }
+  });
+  $$('[data-act="start"]').forEach(b => b.addEventListener('click', toLetter));
+
+  /* ═════════ سؤال آخر ═════════ */
+  const yesBtn = $('#yesBtn');
+  const laterBtn = $('#laterBtn');
+  let dodges = 0, flying = false, settled = false, placeholder = null, lastDodge = 0;
+
+  const overlap = (a, b, gap) =>
+    !(a.right + gap < b.left || a.left - gap > b.right || a.bottom + gap < b.top || a.top - gap > b.bottom);
+
+  function dodge(e) {
+    if (settled || answered) return;
+    if (e && e.cancelable) e.preventDefault();
+    lastDodge = performance.now();
+    if (!flying) {
+      const r = laterBtn.getBoundingClientRect();
+      placeholder = document.createElement('span');
+      placeholder.style.cssText = `display:inline-block;width:${r.width}px;height:${r.height}px`;
+      laterBtn.before(placeholder);
+      document.body.appendChild(laterBtn);       // بیرون از صحنه تا موقعیت fixed درست کار کنه
+      laterBtn.classList.add('fly');
+      laterBtn.style.minWidth = r.width + 'px';
+      laterBtn.style.left = r.left + 'px';
+      laterBtn.style.top = r.top + 'px';
+      flying = true;
+      void laterBtn.offsetWidth;
+    }
+    dodges++;
+    if (dodges >= CONFIG.dodgeLimit) return settle();
+    laterBtn.textContent = DODGE_LABELS[Math.min(dodges, DODGE_LABELS.length - 1)];
+    const w = laterBtn.offsetWidth, h = laterBtn.offsetHeight, pad = 14;
+    const yr = yesBtn.getBoundingClientRect();
+    let x, y, tries = 0;
+    do {
+      x = pad + Math.random() * Math.max(1, innerWidth - w - pad * 2);
+      y = pad + Math.random() * Math.max(1, innerHeight - h - pad * 2);
+      tries++;
+    } while (tries < 14 && overlap({ left: x, top: y, right: x + w, bottom: y + h }, yr, 14));
+    laterBtn.style.left = x + 'px';
+    laterBtn.style.top = y + 'px';
+  }
+
+  /* بعد از چند بار فرار، دکمه آروم برمی‌گرده سر جاش و می‌شه روش زد */
+  function settle() {
+    settled = true;
+    laterBtn.style.opacity = '0';
+    setTimeout(() => {
+      laterBtn.classList.remove('fly');
+      laterBtn.style.cssText = 'opacity:0';
+      if (placeholder) placeholder.replaceWith(laterBtn);
+      laterBtn.textContent = CALM_LABEL;
+      requestAnimationFrame(() => requestAnimationFrame(() => { laterBtn.style.opacity = '1'; }));
+    }, 320);
+  }
+
+  laterBtn.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') dodge(e); });
+  laterBtn.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') dodge(e); });
+  laterBtn.addEventListener('click', () => {
+    if (settled) answer('later');
+    else if (performance.now() - lastDodge > 450) dodge();
+  });
+  yesBtn.addEventListener('click', () => answer('yes'));
+  $('#tg').href = `https://t.me/${CONFIG.telegram}?text=${encodeURIComponent(CONFIG.prefill)}`;
+
+  /* ═════════ ثبت و ارسال جواب ═════════ */
+  async function answer(kind) {
+    if (answered) return;
+    answered = true;
+    notify(kind);
+    if (flying && !settled) laterBtn.remove();
+    close(el.ask);
+    const h = heartLayout();
+    if (kind === 'yes') {
+      S.pulse = 0;
+      S.pulseC = toUv(h.cx, h.cy);
+      S.moodTarget = 1;
+      if (!reduce) {
+        explode(h.cx, h.cy, 1.5);
+        visibleLimit = P.length;
+        confetti(h.cx, h.cy, 170);
+        setTimeout(() => { visibleLimit = 260; }, 4200);
+      }
+      await wait(reduce ? 0 : 700);
+      el.ask.hidden = true;
+      bars.classList.remove('on');
+      open(el.yes);
+    } else {
+      S.moodTarget = 0.72;
+      if (!reduce) {
+        mode = 'free'; layoutKind = null; visibleLimit = 260;
+        P.forEach(p => { p.vx = rand(-0.6, 0.6); p.vy = rand(-1.4, -0.4); });
+      }
+      await wait(reduce ? 0 : 600);
+      el.ask.hidden = true;
+      bars.classList.remove('on');
+      open(el.later);
+    }
+  }
+
+  /* ایمیل خبر می‌رسه (FormSubmit). برای تست، آدرس سایت رو با ?test باز کن */
+  async function notify(kind) {
+    const isTest = new URLSearchParams(location.search).has('test');
+    const text = kind === 'yes' ? 'ندا روی «آره» زد 🎉🌷' : 'ندا گفت به کمی وقت نیاز داره 🌿';
+    try {
+      await fetch(`https://formsubmit.co/ajax/${CONFIG.email}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: (isTest ? '[تست] ' : '') + 'جواب ندا 🌷',
+          _captcha: 'false',
+          _template: 'box',
+          answer: text,
+          time: new Date().toLocaleString('fa-IR')
+        })
+      });
+    } catch (_) { /* اگه ایمیل نرفت، پیام تلگرام هنوز راه ارتباطیه */ }
+  }
+
+  /* ═════════ شروع ═════════ */
+  let rt;
+  addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      resizeSky(); resizeDust();
+      if (layoutKind === 'name') applyName(false);
+      else if (layoutKind === 'heart') applyHeart(false);
+    }, 150);
+  });
+
+  initGL();
+  resizeSky();
+  resizeDust();
+  requestAnimationFrame(frame);
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { if (layoutKind === 'name' && P.length) applyName(false); });
+  }
+  fontsReady.then(() => {
+    applyName(true);
+    if (reduce) P.forEach(p => { p.x = p.tx; p.y = p.ty; p.a = 1; });
+    open(el.intro);
+  });
+})();
+</script>
+</body>
+</html>
